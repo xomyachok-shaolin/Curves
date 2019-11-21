@@ -3,14 +3,16 @@
 #include "curves.h"
 
 // размер графика
-#define GX (double)7
-#define GY (double)2
+#define GX (double)30
+#define GY (double)1
 // шаг по X
 #define DX 5
 
 // размер устр-ва вывода
 int WX = 0, WY = 0;
 // масштаб осей
+double SX = 0, SY = 0;
+// центр системы координат
 double CX = 0, CY = 0;
 
 /* параметры вывода */
@@ -21,9 +23,45 @@ void setview() {
 	WY = rc.bottom - rc.top;
 	// Центр системы координат
 	CX = 0; CY = WY / 2;
-	CX = 0; CY = WY / 2;
+	// Вычисляем масштаб
+	// отношение размеров обл. вывода в ед. графика к размерам окна
+	SX = GX / WX; SY = GY / WY;
 }
+/* разворачивает ось Y */
+void pixel(HDC hdc, int X, int Y) {
+	SetPixel(hdc, X, CY - Y, RGB(255, 0, 0));
+}
+/* разворачивает ось Y */
+void moveTo(HDC hdc, int X, int Y) {
+	MoveToEx(hdc, X, CY - Y, 0);
+}
+/* разворачивает ось Y */
+void lineTo(HDC hdc, int X, int Y) {
+	LineTo(hdc, X, CY - Y);
+}
+/* функция графика */
+double funca(double x) {
+	return sin(x);
+}
+/* рисует график точками */
+void byPoints(HDC hdc) {
+	double x, y;
+	for (x = 0; x < WX; x++) {
+		y = funca(x * SX);
+		pixel(hdc, x, y / SY);
+	}
+}
+/* рисует график линиями */
+void byLines(HDC hdc) {
+	double x = 0, 
+		   y = funca(x);
+	moveTo(hdc, x, y);
 
+	for (x = DX; x < WX; x += DX) {
+		y = funca(x * SX);
+		lineTo(hdc, x, y / SY);
+	}
+}
 /* контекст устройства GDC */
 void draw() {
 	setview();
@@ -32,4 +70,8 @@ void draw() {
 	LineTo(GDC, WX, CY);
 	MoveToEx(GDC, CX, 0, NULL);
 	LineTo(GDC, CX, WY);
+
+	byPoints(GDC);
+	byLines(GDC);
+
 }
